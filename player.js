@@ -26,7 +26,7 @@ var MyPlayer = function (id) {
 	setInterval(function() {
 		if (cache.length > 0) {
 			cache.push(get_browser_info());
-			console.log(cache);
+			//console.log(cache);
 			cache = [];
 		}
 	}, 10000);
