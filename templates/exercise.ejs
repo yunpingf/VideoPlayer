@@ -1,0 +1,10 @@
+<div id="question-main">
+	<div><%= question%></div>
+	<% for(var i = 0; i < options.length; ++i) {%>
+		<div><input type='<%= type%>' name='<%= String.fromCharCode(i+65) %>' value='<%= String.fromCharCode(i+65) %>' />
+		<span><%= String.fromCharCode(i+65)%>. <%= options[i]%></span></div>
+	<% } %>
+</div>
+<div id="button-bar">
+	<button id="submit">提交</button>
+</div>

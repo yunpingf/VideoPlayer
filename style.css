@@ -1,0 +1,16 @@
+#content {
+	height: 360px;
+    width: 640px;
+    position: absolute;
+    z-index: 1000;
+    display: block;
+    background-color: white;
+}
+#button-bar {
+	position:absolute;
+	bottom:0px;
+	right:0px;
+}
+#button-bar button{
+	font-size: 15px;
+}
