@@ -14,3 +14,8 @@
 #button-bar button{
 	font-size: 15px;
 }
+.jw-dock-button {
+	width: 1.8em;
+	height: 1.8em;
+	margin: 0.3em;
+}

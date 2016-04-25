@@ -29,7 +29,7 @@ var MyPlayer = function (id) {
 			//console.log(cache);
 			cache = [];
 		}
-	}, 10000);
+	}, 50000);
 }
 
 MyPlayer.prototype.getCache = function() {
@@ -42,9 +42,12 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 		sources: [{
 			file: wowza_root+smil_path+'/jwplayer.smil'
 		},{
-			file: wowza_root+smil_path+'/manifest.f4m'
+			file: wowza_root+smil_path+'/playlist.m3u8'
 			//http://192.168.1.4:1935/vod/smil:bigbuckbunny.smil/manifest.f4m
 		}],
+		/*sources:[{
+			file: '/videos/sample.mp4'
+		}],*/
 		tracks: [{
 			file: track,
 			kind: 'chapters'
@@ -57,19 +60,37 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 	this.player.setup(obj);
 	var cache = this.cache;
 	var player = this.player;
-	this.player.on('seek', function(e) {
+	player.on('seek', function(e) {
 		cache.push({
 			type: 'seek',
 			from: e.position,
 			to: e.offset
 		});
 	});
-	this.player.on('play', function(e) {
+	player.on('play', function(e) {
 		cache.push({
 			type: 'play',
-			at: player.getPosition()
+			at: player.getPosition(),
+			oldstate: e.oldstate
 		});
 	});
+	player.on('pause', function(e){
+		cache.push({
+			type: 'pause',
+			at: player.getPosition(),
+			oldstate: e.oldstate
+		});
+	});
+	
+	player.addButton("/icons/fast_forward_white_24x24.png", "Fast Forward", function(){
+		player.seek(player.getPosition() + 5);
+	}, "fast_forward");
+	player.addButton("/icons/fast_rewind_white_24x24.png", "Fast Rewind", function(){
+		player.seek(player.getPosition() - 5);
+	}, "fast_rewind");
+	if (player.getRenderingMode() == "html5") {
+		var video = $("video");
+	}
 }
 
 MyPlayer.prototype.addExercise = function (info) {
@@ -88,11 +109,6 @@ MyPlayer.prototype.addExercise = function (info) {
 			var theBody = $("#"+player.id);
 		} else {
 			var theBody = $("#"+player.id+"_wrapper");
-		}
-
-		if (p.getRenderingMode() == "html5"){
-		} else {
-			//el3.style.top = playerHeightPX-playerHeightPX+"px";
 		}
 
 		theBody.append(content);
