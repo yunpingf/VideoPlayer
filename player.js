@@ -95,14 +95,21 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 
 MyPlayer.prototype.addExercise = function (info) {
 	var p = this.player;
+	p.exerciseDone = {};
 	var func = [];
-
-	var showExercise = function (p, template_path, question_path) {
+	function getLatestUnfinshed(p) {
+		var keys = Object.keys(p.exerciseDone);
+		for (var i = 0; i < keys.length; ++i) {
+			if (!p.exerciseDone[parseInt(keys[i])]) {
+				return parseInt(keys[i]);
+			}
+		}
+	}
+	var showExercise = function (p, seek_time, question_data) {
 		p.shown = true;
 		p.pause(p.shown);
 		var content = $("<div id='content'></div>")
-		var data = {type:'radio', question:'This is a question',options:['Answer 1', 'Answer 2', 'Answer 3', 'Answer 4']}
-		var question = $.parseHTML(new EJS({url: template_path}).render(data));
+		var question = $.parseHTML(new EJS({url: "templates/exercise.ejs"}).render(question_data));
 		content.append(question);
 
 		if (p.getRenderingMode() == "html5"){
@@ -116,35 +123,40 @@ MyPlayer.prototype.addExercise = function (info) {
 			p.shown = false;
 			p.play(!p.shown);
 			$("#content").remove();
+			p.exerciseDone[seek_time] = true;
 		});
 	};
 
 	function createfunc(obj) {
 	    return function() { 
-	    	var template_path = obj.template_path;
-			var question_path = obj.question_path;
+	    	var id = obj.id;
+			var question_data = obj.question_data;
 			var seek_time = obj.seek_time;
 			var flag = false;
-			var counter = 0;
+
+			p.exerciseDone[seek_time] = false;
 			p.on('time', function(e) {
-				var time = Math.floor(e.position);
-				if (time == counter) {
-					if (counter == seek_time) {
-						showExercise(p, template_path, question_path);
-					}
-					counter += 1;
+				var time = e.position;
+				if (time == seek_time && !flag) {
+					showExercise(p, seek_time, question_data);
+					flag = true;
 				}
 			});
 
 			p.on('seek', function(e) {
-				counter = Math.floor(e.offset);
+				flag = false;
 				if (!p.shown) {
 					if (e.offset == seek_time){
-						showExercise(p,template_path, question_path);
+						showExercise(p, seek_time, question_data);
+					}
+					else if (e.offset > seek_time) {
+						if (!p.exerciseDone[seek_time]){
+							var latestUnfinshed = getLatestUnfinshed(p);
+							if (latestUnfinshed == seek_time)
+						}
 					}
 				}
 				else {
-					p.play(!p.shown);
 				}
 			});
 			p.on('play', function(e) {

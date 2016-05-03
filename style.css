@@ -1,5 +1,13 @@
+@font-face {
+    font-family: 'jw-custom';
+    src: url('fonts/jw-custom-icons.woff');
+}
+.jw-icon {
+	font-family:'jw-custom'
+}
+
 #content {
-	height: 360px;
+	height: 320px;
     width: 640px;
     position: absolute;
     z-index: 1000;

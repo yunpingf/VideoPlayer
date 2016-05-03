@@ -6,13 +6,13 @@ $(function () {
    		"/vtts/points.vtt",
    		640,360);
 	player.addExercise([{
-		template_path: "templates/exercise.ejs",
-		question_path: "",
+		id: 0, 
+		question_data: {type:'radio', question:'This is a question',options:['Answer 1', 'Answer 2', 'Answer 3', 'Answer 4']},
 		seek_time: 62
 	},
 	{
-		template_path: "templates/exercise2.ejs",
-		question_path: "",
+		id: 1, 
+		question_data: {type:'checkbox', question:'This is a question2',options:['Answer 1', 'Answer 2', 'Answer 3', 'Answer 4']},
 		seek_time: 126
 	}]);
 
