@@ -93,20 +93,20 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 	}
 }
 
-MyPlayer.prototype.addExercise = function (info) {
-	var p = this.player;
-	p.exerciseDone = {};
-	var func = [];
-	function getLatestUnfinshed(p) {
-		var keys = Object.keys(p.exerciseDone);
-		for (var i = 0; i < keys.length; ++i) {
-			if (!p.exerciseDone[parseInt(keys[i])]) {
-				return parseInt(keys[i]);
-			}
-		}
+MyPlayer.prototype.addExercise = function (exercises) {
+	var player = this.player;
+	player.shown = false;
+	player.exerciseDone = {};
+	player.currentExercise = -1;
+	player.counter = 0;
+
+	var seek_times = Object.keys(exercises);
+	for (var i = 0; i < seek_times.length; ++i) {
+		player.exerciseDone[seek_times[i]] = false;
 	}
-	var showExercise = function (p, seek_time, question_data) {
+	function showExercise(p, seek_time, question_data) {
 		p.shown = true;
+		p.currentExercise = seek_time;
 		p.pause(p.shown);
 		var content = $("<div id='content'></div>")
 		var question = $.parseHTML(new EJS({url: "templates/exercise.ejs"}).render(question_data));
@@ -121,56 +121,53 @@ MyPlayer.prototype.addExercise = function (info) {
 		theBody.append(content);
 		$("#submit").on('click', function(){
 			p.shown = false;
+			p.currentExercise = -1;
 			p.play(!p.shown);
 			$("#content").remove();
 			p.exerciseDone[seek_time] = true;
 		});
 	};
-
-	function createfunc(obj) {
-	    return function() { 
-	    	var id = obj.id;
-			var question_data = obj.question_data;
-			var seek_time = obj.seek_time;
-			var flag = false;
-
-			p.exerciseDone[seek_time] = false;
-			p.on('time', function(e) {
-				var time = e.position;
-				if (time == seek_time && !flag) {
-					showExercise(p, seek_time, question_data);
-					flag = true;
-				}
-			});
-
-			p.on('seek', function(e) {
-				flag = false;
-				if (!p.shown) {
-					if (e.offset == seek_time){
-						showExercise(p, seek_time, question_data);
-					}
-					else if (e.offset > seek_time) {
-						if (!p.exerciseDone[seek_time]){
-							var latestUnfinshed = getLatestUnfinshed(p);
-							if (latestUnfinshed == seek_time)
-						}
-					}
-				}
-				else {
-				}
-			});
-			p.on('play', function(e) {
-				if (p.shown) {
-					p.play(!p.shown);
-				}
-			});
-	    };
+	function hideExercies(p) {
+		p.shown = false;
+		p.currentExercise = -1;
+		p.play(!p.shown);
+		$("#content").remove();
 	}
-	for (var o = 0; o < info.length; ++o) {
-		func[o] = createfunc(info[o]);
-	}
-	for (var o = 0; o < info.length; ++o) {
-		func[o]();
-	}
-	
-}
+	player.on('time', function(e) {
+		var time = Math.floor(e.position);
+		if (time > player.counter) {
+			player.counter += 1;
+			if (seek_times.includes(player.counter.toString())) {
+				var question_data = exercises[player.counter];
+				showExercise(player, player.counter, question_data);
+			}
+		}
+	});
+
+	player.on('seek', function(e) {
+		var time = e.offset;
+		player.counter = Math.floor(time);
+		if (!player.shown) {
+			for (var i = 0; i < seek_times.length; ++i) {
+				console.log(player.exerciseDone[seek_times[i]]);
+				console.log(seek_times[i]+" "+time);
+				if ((player.exerciseDone[seek_times[i]]&&seek_times[i] == time) ||
+						(!player.exerciseDone[seek_times[i]]&&seek_times[i] <= time)) {
+					var question_data = exercises[seek_times[i]];
+					showExercise(player, seek_times[i], question_data);
+					break;
+				}
+			}
+		}
+		else if(time < player.currentExercise){
+			hideExercies(player);
+		}
+
+	});
+
+	player.on('play', function(e) {
+		if (player.shown) {
+			player.play(!player.shown);
+		}
+	});
+};
