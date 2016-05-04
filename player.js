@@ -48,10 +48,7 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 		/*sources:[{
 			file: '/videos/sample.mp4'
 		}],*/
-		tracks: [{
-			file: track,
-			kind: 'chapters'
-		}]
+		tracks: track
 	}];
 
 	obj.playlist = playlist;
@@ -149,8 +146,7 @@ MyPlayer.prototype.addExercise = function (exercises) {
 		player.counter = Math.floor(time);
 		if (!player.shown) {
 			for (var i = 0; i < seek_times.length; ++i) {
-				console.log(player.exerciseDone[seek_times[i]]);
-				console.log(seek_times[i]+" "+time);
+				
 				if ((player.exerciseDone[seek_times[i]]&&seek_times[i] == time) ||
 						(!player.exerciseDone[seek_times[i]]&&seek_times[i] <= time)) {
 					var question_data = exercises[seek_times[i]];
