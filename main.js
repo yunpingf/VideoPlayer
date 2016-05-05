@@ -6,7 +6,7 @@ $(function () {
 		kind: "chapters"
 	},{ 
 	    file: "/vtts/captions-cn.vtt", 
-	    label: "中文",
+	    label: "Chinese",
 	    kind: "captions",
 	    "default": true 
 	},{ 

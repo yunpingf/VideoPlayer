@@ -27,3 +27,8 @@
 	height: 1.8em;
 	margin: 0.3em;
 }
+
+.caption:hover {
+	cursor: pointer;
+	background-color: antiquewhite;
+}

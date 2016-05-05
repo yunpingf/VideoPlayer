@@ -60,7 +60,6 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 	var player = this.player;
 	var dao = this.dao;
 	var chapters = [], captions = [], captionLists = [];
-	var currentCaption = 0; //id(file path), label
 
 	player.on('seek', function(e) {
 		cache.push({
@@ -84,21 +83,109 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 		});
 	});
 
-	
+	function buildCaptions(index, label) {
+		$("#captions").empty();
+		if (index != 0) {
+			var caption = 
+				$.parseHTML(new EJS({url: "templates/caption.ejs"}).render({index:index, label:label,"captions":captions[index]}));
+			$("#captions").append(caption);
+			for (var i = 0; i < captions[index].length; ++i) {
+				$($(".caption")[i]).on('click', (function(val){
+					return function(e){
+						var elem = captions[index][val];
+						var beginTime = Melem.beginTime;
+						player.seek(beginTime);
+					};
+				})(i));
+			};
+		}
+	};
+
+	function toSeconds(s) {
+		var nums = s.split(":");
+		var res = 0;
+		res += parseInt(nums[0]) * 3600;
+		res += parseInt(nums[1]) * 60;
+		res += parseFloat(nums[2]);
+		return res;
+	};
+
+	function parseVTT(text) {
+		var lines = text.split("\n");
+		var time = null;
+		var i = 0;
+		if (lines[0].indexOf("-->") == -1){
+			time = lines[1].split(" ");
+			i = 2;
+		}
+		else {
+			time = lines[0].split(" ");
+			i = 1;
+		}
+		var beginTime = toSeconds(time[0]);
+		var endTime = toSeconds(time[2]);
+		var caption = "";
+		for (; i < lines.length; ++i)
+			caption += lines[i]+" ";
+		caption = caption.substr(0, caption.length-1);
+		return {
+			"beginTime": beginTime,
+			"endTime": endTime,
+			"caption": caption
+		};
+	};
+
+	function loadCaptions(text, file, index) {
+		if (captions[index] == null) {
+			var texts = text.split("\n\n");
+			texts.shift();
+			console.log(texts);
+			captions[index] = [];
+			for (var i = 0; i < texts.length; ++i) {
+				captions[index].push(parseVTT(texts[i]));
+			}
+			return captions[index];
+		}
+		else {
+			return captions[index];
+		}
+	};
+
 	player.on('ready', function(e){
-		//chapters = dao.getChapters("vtts/chapters.vtt");
-		//
+		
 	});
 
 	player.on('captionsList', function(e){
 		captionLists = player.getCaptionsList();
 		console.log(captionLists);
 		var index = player.getCurrentCaptions();
-		currentCaption = captionLists[index];
-		captions[index] = dao.getCaptions(currentCaption.id, index);
+		var currentCaption = captionLists[index];//id(file path), label
+		$.ajax({
+			url: currentCaption.id
+		}).done(function(text){
+			loadCaptions(text, currentCaption.id, index);
+			buildCaptions(index, currentCaption.label);
+		});
+		
 	});
 
 	player.on('captionsChanged', function(e) {
+		var index = player.getCurrentCaptions();
+		var currentCaption = captionLists[index];
+		if (captions[index] == null) {
+			$.ajax({
+				url: currentCaption.id
+			}).done(function(text){
+				loadCaptions(text, currentCaption.id, index);
+				buildCaptions(index, currentCaption.label);
+			});
+		}
+		else {
+			buildCaptions(index, currentCaption.label);
+		};
+	});
+
+	player.on('seek', function(e){
 
 	});
 	

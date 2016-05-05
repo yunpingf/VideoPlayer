@@ -38,7 +38,7 @@ DAO.prototype.getCaptions = function(file, index) {
 				for (var i = 0; i < texts.length; ++i) {
 					dao.captions[index].push(dao.parseVTT(texts[i]));
 				}
-				console.log(dao.captions);
+				console.log(dao.captions[index]);
 				return dao.captions[index];
 			}
 		};
