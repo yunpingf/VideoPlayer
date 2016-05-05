@@ -16,7 +16,7 @@ $(function () {
 	}];
 
 	player.setUp("/uploads/charlie-brown.jpg",
-   		"http://192.168.1.4:1935/vod/smil:",
+   		"http://localhost:1935/vod/smil:",
    		"bigbuckbunny.smil",
    		track,
    		640,360);

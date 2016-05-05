@@ -22,6 +22,7 @@ var MyPlayer = function (id) {
 	this.player = jwplayer(id);
 	this.shown = false;
 	this.cache = [];
+	this.dao = new DAO();
 	var cache = this.cache;
 	setInterval(function() {
 		if (cache.length > 0) {
@@ -57,6 +58,10 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 	this.player.setup(obj);
 	var cache = this.cache;
 	var player = this.player;
+	var dao = this.dao;
+	var chapters = [], captions = [], captionLists = [];
+	var currentCaption = 0; //id(file path), label
+
 	player.on('seek', function(e) {
 		cache.push({
 			type: 'seek',
@@ -78,6 +83,24 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 			oldstate: e.oldstate
 		});
 	});
+
+	
+	player.on('ready', function(e){
+		//chapters = dao.getChapters("vtts/chapters.vtt");
+		//
+	});
+
+	player.on('captionsList', function(e){
+		captionLists = player.getCaptionsList();
+		console.log(captionLists);
+		var index = player.getCurrentCaptions();
+		currentCaption = captionLists[index];
+		captions[index] = dao.getCaptions(currentCaption.id, index);
+	});
+
+	player.on('captionsChanged', function(e) {
+
+	});
 	
 	player.addButton("/icons/fast_forward_white_24x24.png", "Fast Forward", function(){
 		player.seek(player.getPosition() + 5);
@@ -89,6 +112,8 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 		var video = $("video");
 	}
 }
+
+
 
 MyPlayer.prototype.addExercise = function (exercises) {
 	var player = this.player;
@@ -166,4 +191,5 @@ MyPlayer.prototype.addExercise = function (exercises) {
 			player.play(!player.shown);
 		}
 	});
+	
 };
