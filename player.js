@@ -22,7 +22,6 @@ var MyPlayer = function (id) {
 	this.player = jwplayer(id);
 	this.shown = false;
 	this.cache = [];
-	this.dao = new DAO();
 	var cache = this.cache;
 	setInterval(function() {
 		if (cache.length > 0) {
@@ -58,8 +57,9 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 	this.player.setup(obj);
 	var cache = this.cache;
 	var player = this.player;
-	var dao = this.dao;
 	var chapters = [], captions = [], captionLists = [];
+	var searchinput = $("#searchinput");
+	var matches = [];
 
 	player.on('seek', function(e) {
 		cache.push({
@@ -67,7 +67,11 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 			from: e.position,
 			to: e.offset
 		});
+		var index = player.getCurrentCaptions();
+		var pos = e.offset;
+		highlightCaption(index, pos);
 	});
+
 	player.on('play', function(e) {
 		cache.push({
 			type: 'play',
@@ -75,12 +79,20 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 			oldstate: e.oldstate
 		});
 	});
+
 	player.on('pause', function(e){
 		cache.push({
 			type: 'pause',
 			at: player.getPosition(),
 			oldstate: e.oldstate
 		});
+	});
+
+	player.on('time', function(e){
+		var pos = e.position;
+		var index = player.getCurrentCaptions();
+		if (index != 0)
+			highlightCaption(index, pos);
 	});
 
 	function buildCaptions(index, label) {
@@ -92,12 +104,18 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 			for (var i = 0; i < captions[index].length; ++i) {
 				$($(".caption")[i]).on('click', (function(val){
 					return function(e){
-						var elem = captions[index][val];
-						var beginTime = Melem.beginTime;
+						var beginTime = captions[index][val].beginTime;
 						player.seek(beginTime);
 					};
 				})(i));
+				
 			};
+			$(".caption:not(.captionHighlight)").on('mouseenter', function(e){
+				$(e.target).addClass("captionHover");
+			});
+			$(".caption:not(.captionHighlight)").on('mouseleave', function(e){
+				$(e.target).removeClass("captionHover");
+			});
 		}
 	};
 
@@ -151,6 +169,18 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 		}
 	};
 
+	function highlightCaption(index, pos) {
+		var caption = captions[index];
+		for (var i = 0; i < caption.length; ++i) {
+			var beginTime = caption[i].beginTime, endTime = caption[i].endTime;
+			$($(".caption")[i]).removeClass("captionHighlight");
+			if (beginTime <= pos && endTime > pos) {
+				$($(".caption")[i]).addClass("captionHighlight");
+				break;
+			}
+		}
+	}
+
 	player.on('ready', function(e){
 		
 	});
@@ -159,20 +189,21 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 		captionLists = player.getCaptionsList();
 		console.log(captionLists);
 		var index = player.getCurrentCaptions();
-		var currentCaption = captionLists[index];//id(file path), label
-		$.ajax({
-			url: currentCaption.id
-		}).done(function(text){
-			loadCaptions(text, currentCaption.id, index);
-			buildCaptions(index, currentCaption.label);
-		});
-		
+		if (index != 0) {
+			var currentCaption = captionLists[index];//id(file path), label
+			$.ajax({
+				url: currentCaption.id
+			}).done(function(text){
+				loadCaptions(text, currentCaption.id, index);
+				buildCaptions(index, currentCaption.label);
+			});
+		}
 	});
 
 	player.on('captionsChanged', function(e) {
 		var index = player.getCurrentCaptions();
 		var currentCaption = captionLists[index];
-		if (captions[index] == null) {
+		if (index != 0 && captions[index] == null) {
 			$.ajax({
 				url: currentCaption.id
 			}).done(function(text){
@@ -185,10 +216,72 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 		};
 	});
 
-	player.on('seek', function(e){
+	function buildSearchItem(searchword){
+		var item = $.parseHTML(new EJS({url: "templates/searchItem.ejs"}).render({"val":searchword}));
+		var searchBox = $("#searchbox");
+		$("#searchinput").before(item);
+		$("#searchinput").val("");
+		$(item).children(".close").on('click', function(e){
+			$(item).remove();
+			unbindKeywords(searchword);
+		});
+	};
 
+	function hightlightKeywords(searchword) {
+		var index = player.getCurrentCaptions();
+		if (index != 0){
+			var caption = captions[index];
+			for (var i = 0; i < caption.length; ++i) {
+				var elem = $($("#captions").children().children()[i]);
+				var text = elem.html();
+				var startIndex = 0,k = 0, len = searchword.length;
+				while ((k = text.indexOf(searchword, startIndex)) != -1) {
+					text = text.substr(0, k) + "<em>" + 
+					text.substr(k, len) + "</em>" +
+					text.substr(k + len);
+					elem.html(text);
+					startIndex = k + len + 9;
+				}
+			}
+		}
+	};
+
+	function unbindKeywords(searchword) {
+		var index = player.getCurrentCaptions();
+		if (index != 0){
+			searchword = "<em>" + searchword + "</em>";
+			var caption = captions[index];
+			for (var i = 0; i < caption.length; ++i) {
+				var elem = $($("#captions").children().children()[i]);
+				var text = elem.html();
+				var startIndex = 0,k = 0, len = searchword.length;
+				while ((k = text.indexOf(searchword, startIndex)) != -1) {
+					text = text.substr(0, k) + 
+					text.substr(k+4, len-9) + 
+					text.substr(k + len);
+					console.log(text);
+					elem.html(text);
+					startIndex = k+len-9;
+				}
+			}
+		}
+	};
+
+	searchinput.on('keydown', function(e){
+		if (e.keyCode == 13) {//enter
+			var searchword = this.value.toLowerCase();
+			buildSearchItem(searchword);
+			hightlightKeywords(searchword);
+		}
+		/*else if (e.keyCode == 32){//space
+			var searchword = this.value.toLowerCase().trim();
+			buildSearchItem(searchword);
+			setTimeout(function(){
+				$("#searchinput").val("");
+			}, 10);
+		}*/
 	});
-	
+
 	player.addButton("/icons/fast_forward_white_24x24.png", "Fast Forward", function(){
 		player.seek(player.getPosition() + 5);
 	}, "fast_forward");
@@ -258,7 +351,6 @@ MyPlayer.prototype.addExercise = function (exercises) {
 		player.counter = Math.floor(time);
 		if (!player.shown) {
 			for (var i = 0; i < seek_times.length; ++i) {
-				
 				if ((player.exerciseDone[seek_times[i]]&&seek_times[i] == time) ||
 						(!player.exerciseDone[seek_times[i]]&&seek_times[i] <= time)) {
 					var question_data = exercises[seek_times[i]];
