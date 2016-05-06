@@ -66,6 +66,7 @@
 
 .searchItem {
 	display: flex;
+	white-space: nowrap;
 }
 
 .searchItem .close{

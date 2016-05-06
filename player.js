@@ -220,7 +220,6 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 		var item = $.parseHTML(new EJS({url: "templates/searchItem.ejs"}).render({"val":searchword}));
 		var searchBox = $("#searchbox");
 		$("#searchinput").before(item);
-		$("#searchinput").val("");
 		$(item).children(".close").on('click', function(e){
 			$(item).remove();
 			unbindKeywords(searchword);
@@ -259,7 +258,6 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 					text = text.substr(0, k) + 
 					text.substr(k+4, len-9) + 
 					text.substr(k + len);
-					console.log(text);
 					elem.html(text);
 					startIndex = k+len-9;
 				}
@@ -270,8 +268,13 @@ MyPlayer.prototype.setUp = function (img, wowza_root, smil_path, track, width, h
 	searchinput.on('keydown', function(e){
 		if (e.keyCode == 13) {//enter
 			var searchword = this.value.toLowerCase();
-			buildSearchItem(searchword);
-			hightlightKeywords(searchword);
+			if (searchword.length > 0){
+				buildSearchItem(searchword);
+				hightlightKeywords(searchword);
+			}
+			setTimeout(function(){
+				$("#searchinput").val("");
+			}, 10);
 		}
 		/*else if (e.keyCode == 32){//space
 			var searchword = this.value.toLowerCase().trim();
