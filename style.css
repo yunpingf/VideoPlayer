@@ -44,6 +44,7 @@
 }
 
 #searchbox {
+	width:640px;
 	display: flex;
 	border: 1px solid #beccdb;
     border-radius: 2px;

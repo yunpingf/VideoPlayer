@@ -327,9 +327,10 @@ MyPlayer.prototype.addExercise = function (exercises) {
 		$("#submit").on('click', function(){
 			p.shown = false;
 			p.currentExercise = -1;
-			p.play(!p.shown);
 			$("#content").remove();
 			p.exerciseDone[seek_time] = true;
+			p.play();
+			p.seek(parseInt(seek_time)+1);
 		});
 	};
 	function hideExercies(p) {
@@ -370,8 +371,7 @@ MyPlayer.prototype.addExercise = function (exercises) {
 
 	player.on('play', function(e) {
 		if (player.shown) {
-			player.play(!player.shown);
+			player.pause();
 		}
 	});
-	
 };
